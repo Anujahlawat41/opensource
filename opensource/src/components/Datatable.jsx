@@ -1,18 +1,14 @@
-// src/components/DataTable.js
 import React, { useMemo, useState } from 'react';
-import MaterialReactTable from 'material-react-table';
-import { useTable, useSortBy, useGroupBy, useFilters, usePagination, useColumnVisibility } from '@tanstack/react-table';
+import { MaterialReactTable } from 'material-react-table';
 import { fuzzySearch } from '../Utils/Fuzzysearch';
-import { PriceFilter, CategoryFilter, DateRangeFilter } from './Filters';
 import { Sidebar } from './Sidebar';
 import { data as mockData } from '../Data';
 
 const DataTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState([]);
-  const [priceRange, setPriceRange] = useState([0, 100]);
-  const [dateRange, setDateRange] = useState([null, null]);
+  const [columnVisibility, setColumnVisibility] = useState({});
 
+  // Define the table columns
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
@@ -21,7 +17,7 @@ const DataTable = () => {
     {
       accessorKey: 'category',
       header: 'Category',
-      enableGrouping: true,
+      enableGrouping: true, // If you're enabling grouping
     },
     {
       accessorKey: 'subcategory',
@@ -31,13 +27,13 @@ const DataTable = () => {
     {
       accessorKey: 'price',
       header: 'Price',
-      filterFn: 'between', // Range filter for price
+      filterFn: 'between', // Optional: Use for range filter
     },
     {
       accessorKey: 'createdAt',
       header: 'Created At',
       accessorFn: row => new Date(row.createdAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }),
-      filterFn: 'dateBetween', // Date range filter
+      filterFn: 'dateBetween', // Optional: Date range filter
     },
     {
       accessorKey: 'updatedAt',
@@ -46,33 +42,42 @@ const DataTable = () => {
     },
   ], []);
 
-  const data = fuzzySearch(mockData, searchTerm, ['name']);
-
-  const table = useTable({ data, columns }, useSortBy, useFilters, useGroupBy, usePagination, useColumnVisibility);
+  // Apply fuzzy search filter on the data
+  const filteredData = useMemo(() => fuzzySearch(mockData, searchTerm, ['name']), [searchTerm, mockData]);
 
   return (
     <div className="table-container">
-      <input type="text" placeholder="Search by name" onChange={e => setSearchTerm(e.target.value)} />
-      <Sidebar
-        toggleGroupBy={table.toggleGroupBy}
-        toggleHideColumn={table.toggleHideColumn}
-        visibleColumns={table.allColumns}
-        groupOptions={[{ value: 'category', label: 'Category' }, { value: 'subcategory', label: 'Subcategory' }]}
+      <input
+        type="text"
+        placeholder="Search by name"
+        onChange={e => setSearchTerm(e.target.value)}
+        value={searchTerm}
       />
+      
+      <Sidebar
+        toggleHideColumn={(colId) => setColumnVisibility((prev) => ({ ...prev, [colId]: !prev[colId] }))}
+        visibleColumns={columns}
+        groupOptions={[
+          { value: 'category', label: 'Category' },
+          { value: 'subcategory', label: 'Subcategory' },
+        ]}
+      />
+      
       <MaterialReactTable
-        columns={table.columns}
-        data={table.rows}
+        columns={columns}
+        data={filteredData}
         enableSorting
         enableColumnFilters
         enableColumnVisibility
-        pagination={{
-          pageSize: 10,
-          onPageChange: table.setPageIndex,
-          onPageSizeChange: table.setPageSize,
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
+        state={{ columnVisibility }}
+        initialState={{
+          pagination: { pageSize: 10 },
         }}
       />
     </div>
   );
 };
 
-export default Datatable;
+export default DataTable;

@@ -1,6 +1,5 @@
-// src/components/Sidebar.js
 import React from 'react';
-//import Select from 'react-select';
+import Select from 'react-select';  // Ensure this is uncommented
 
 export const Sidebar = ({ toggleGroupBy, toggleHideColumn, visibleColumns, groupOptions }) => {
   return (
@@ -13,13 +12,13 @@ export const Sidebar = ({ toggleGroupBy, toggleHideColumn, visibleColumns, group
 
       <h3>Toggle Columns</h3>
       {visibleColumns.map(col => (
-        <label key={col.accessor}>
+        <label key={col.accessorKey || col.id}>
           <input
             type="checkbox"
             checked={!col.isHidden}
-            onChange={() => toggleHideColumn(col.accessor)}
+            onChange={() => toggleHideColumn(col.accessorKey || col.id)}
           />
-          {col.Header}
+          {col.header || col.Header}
         </label>
       ))}
     </div>
